@@ -1,0 +1,60 @@
+0:invalid_class_id
+1:aeroplane,aeroplanes,airplanes,airplane
+2:bag,bags
+3:bed,beds
+4:bedclothes
+5:bench,benches
+6:bicycle,bicycles
+7:bird,birds
+8:boat,boats
+9:book,books
+10:bottle,bottles,water bottle
+11:building,buildings
+12:bus,buses
+13:cabinet,cabinets,drawer,drawers
+14:car,cars
+15:cat,cats,kitties,kitty
+16:ceiling
+17:chair,chairs
+18:cloth,clothes
+19:computer case
+20:cow,cows
+21:cup,cups
+22:curtain,curtains
+23:dog,dogs,puppy,puppies
+24:door,doors
+25:fence,fences
+26:floor,tile ground,carpet,rug,flooring
+27:flower,flowers
+28:food
+29:grass,grasses,lawn,turf
+30:ground,soil,soil ground,dirt ground
+31:horse,horses,foal
+32:keyboard,keyboards
+33:lamp,lamps,bulb,bulbs
+34:motorbike,motorcycle,motorbikes,motorcycles
+35:mountain,mountains
+36:mouse
+37:person,child,girl,boy,woman,man,people,childeren,girls,boys,women,men,lady,guy,ladies,guys
+38:plate,plates
+39:platform,platforms
+40:pottedplant,pottedplants,plant pot,plant pots,planter,planters
+41:street,streets
+42:rock,rocks,stone,stones
+43:sheep
+44:shelves,shelf
+45:sidewalk
+46:sign,signs
+47:sky,clouds
+48:snow
+49:sofa
+50:diningtable,diningtables,table,tables,desk,desks,side table,side tables,coffee table
+51:track,train track,railroad
+52:train,trains,locomotive,locomotives,freight train
+53:tree,trees
+54:truck,trucks
+55:tvmonitor,monitor,tv
+56:wall,walls
+57:water
+58:window,windows
+59:wood piece

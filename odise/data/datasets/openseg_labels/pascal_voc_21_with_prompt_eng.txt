@@ -1,0 +1,21 @@
+0:background,crops,bush,shrub,tiles,pavement,rug,carpet,box,boxes,speaker,storage,painting,board,panel,poster,clock,cage,drinking glass,park,plaything,toy,fireplace,bag,bag,bed,bench,book,books,building,buildings,cabinet,drawer,ceiling,computer,computer case,cup,cups,door,fence,floor,flower,grass,lawn,turf,ground,soil,dirt,tiles,keyboard,lamp,mountain,hills,mouse,curtain,platform,sign,street,rock,stone,shelf,sidewalk,sky,clouds,snow,track,train track,tree,trees,wall,water,window,wood,woods
+1:aeroplane,airplane,aeroplanes,airplanes
+2:bicycle,bicycles,bike,bikes
+3:bird,birds
+4:boat,boats
+5:bottle,bottles,water bottle
+6:bus,buses
+7:car,cars
+8:cat,cats,kitties,kitty
+9:chair,chairs
+10:cow,cows,calf
+11:diningtable,dining table,diningtables,dining tables,plate,plates
+12:dog,dogs,puppy,puppies
+13:horse,horses,foal
+14:motorbike,motorcycle,motorbikes,motorcycles
+15:person,child,girl,boy,woman,man,people,childeren,girls,boys,women,men,lady,guy,ladies,guys,clothes
+16:pottedplant,pottedplants,plant pot,plant pots,planter,planters
+17:sheep
+18:sofa,sofas
+19:train,trains,locomotive,locomotives,freight train
+20:tvmonitor,monitor,tv

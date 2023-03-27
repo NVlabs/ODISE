@@ -1,0 +1,60 @@
+# ------------------------------------------------------------------------------
+# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+# property and proprietary rights in and to this material, related
+# documentation and any modifications thereto. Any use, reproduction,
+# disclosure or distribution of this material and related documentation
+# without an express license agreement from NVIDIA CORPORATION or
+# its affiliates is strictly prohibited.
+#
+# Written by Jiarui Xu
+# ------------------------------------------------------------------------------
+
+from detectron2.config import LazyCall as L
+from detectron2.solver import WarmupParamScheduler
+from fvcore.common.param_scheduler import MultiStepParamScheduler
+
+from ..common.models.odise_with_label import model
+from ..common.data.coco_panoptic_semseg import dataloader
+from ..common.train import train
+from ..common.optim import AdamW as optimizer
+from ..common.data.pano_open_d2_eval import (
+    ade150_open_eval as _ade150_eval,
+    ctx59_open_eval as _ctx59_eval,
+    ade847_open_eval as _ade847_eval,
+    ctx459_open_eval as _ctx459_eval,
+    pas21_open_eval as _pas21_eval,
+)
+
+train.max_iter = 92_188
+train.grad_clip = 0.01
+train.checkpointer.period = 4500
+
+lr_multiplier = L(WarmupParamScheduler)(
+    scheduler=L(MultiStepParamScheduler)(
+        values=[1.0, 0.1, 0.01],
+        # assume 100e with batch-size 64 as original LSJ
+        # Equivalent to 100 epochs.
+        # 100 ep = 184375 iters * 64 images/iter / 118000 images/ep
+        milestones=[163889, 177546],
+        num_updates=184375,
+    ),
+    # for warmup length we adopted COCO LSJ setting
+    warmup_length=500 / 184375,
+    warmup_factor=0.067,
+)
+
+optimizer.lr = 1e-4
+optimizer.weight_decay = 0.05
+
+_ade847_eval.final_iter_only = True
+_ctx459_eval.final_iter_only = True
+
+dataloader.extra_task = dict(
+    eval_ade150=_ade150_eval,
+    eval_ctx59=_ctx59_eval,
+    eval_ade847=_ade847_eval,
+    eval_ctx459=_ctx459_eval,
+    eval_pas21=_pas21_eval,
+)

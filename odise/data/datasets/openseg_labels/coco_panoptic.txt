@@ -1,0 +1,201 @@
+0:invalid_class_id
+1:person
+2:bicycle
+3:car
+4:motorcycle
+5:airplane
+6:bus
+7:train
+8:truck
+9:boat
+10:traffic light
+11:fire hydrant
+12:invalid_class_id
+13:stop sign
+14:parking meter
+15:bench
+16:bird
+17:cat
+18:dog
+19:horse
+20:sheep
+21:cow
+22:elephant
+23:bear
+24:zebra
+25:giraffe
+26:invalid_class_id
+27:backpack
+28:umbrella
+29:invalid_class_id
+30:invalid_class_id
+31:handbag
+32:tie
+33:suitcase
+34:frisbee
+35:skis
+36:snowboard
+37:sports ball
+38:kite
+39:baseball bat
+40:baseball glove
+41:skateboard
+42:surfboard
+43:tennis racket
+44:bottle
+45:invalid_class_id
+46:wine glass
+47:cup
+48:fork
+49:knife
+50:spoon
+51:bowl
+52:banana
+53:apple
+54:sandwich
+55:orange
+56:broccoli
+57:carrot
+58:hot dog
+59:pizza
+60:donut
+61:cake
+62:chair
+63:couch
+64:potted plant
+65:bed
+66:invalid_class_id
+67:dining table
+68:invalid_class_id
+69:invalid_class_id
+70:toilet
+71:invalid_class_id
+72:tv
+73:laptop
+74:mouse
+75:remote
+76:keyboard
+77:cell phone
+78:microwave
+79:oven
+80:toaster
+81:sink
+82:refrigerator
+83:invalid_class_id
+84:book
+85:clock
+86:vase
+87:scissors
+88:teddy bear
+89:hair drier
+90:toothbrush
+91:invalid_class_id
+92:banner
+93:blanket
+94:invalid_class_id
+95:bridge
+96:invalid_class_id
+97:invalid_class_id
+98:invalid_class_id
+99:invalid_class_id
+100:cardboard
+101:invalid_class_id
+102:invalid_class_id
+103:invalid_class_id
+104:invalid_class_id
+105:invalid_class_id
+106:invalid_class_id
+107:counter
+108:invalid_class_id
+109:curtain
+110:invalid_class_id
+111:invalid_class_id
+112:door
+113:invalid_class_id
+114:invalid_class_id
+115:invalid_class_id
+116:invalid_class_id
+117:invalid_class_id
+118:wood floor
+119:flower
+120:invalid_class_id
+121:invalid_class_id
+122:fruit
+123:invalid_class_id
+124:invalid_class_id
+125:gravel
+126:invalid_class_id
+127:invalid_class_id
+128:house
+129:invalid_class_id
+130:light
+131:invalid_class_id
+132:invalid_class_id
+133:mirror-stuff
+134:invalid_class_id
+135:invalid_class_id
+136:invalid_class_id
+137:invalid_class_id
+138:net
+139:invalid_class_id
+140:invalid_class_id
+141:pillow
+142:invalid_class_id
+143:invalid_class_id
+144:platform
+145:playingfield
+146:invalid_class_id
+147:railroad
+148:river
+149:road
+150:invalid_class_id
+151:roof
+152:invalid_class_id
+153:invalid_class_id
+154:sand
+155:sea
+156:shelf
+157:invalid_class_id
+158:invalid_class_id
+159:snow
+160:invalid_class_id
+161:stairs
+162:invalid_class_id
+163:invalid_class_id
+164:invalid_class_id
+165:invalid_class_id
+166:tent
+167:invalid_class_id
+168:towel
+169:invalid_class_id
+170:invalid_class_id
+171:brick wall
+172:invalid_class_id
+173:invalid_class_id
+174:invalid_class_id
+175:stone wall
+176:tile wall
+177:wood wall
+178:water
+179:invalid_class_id
+180:window blind
+181:window
+182:invalid_class_id
+183:invalid_class_id
+184:tree
+185:fence
+186:ceiling
+187:sky
+188:cabinet
+189:table
+190:floor
+191:pavement
+192:mountain
+193:grass
+194:dirt
+195:paper
+196:food
+197:building
+198:rock
+199:wall
+200:rug

@@ -1,0 +1,151 @@
+0:invalid_class_id
+1:wall,walls,brick wall,stone wall,interior wall
+2:building,buildings,edifice,edifices
+3:sky,clouds
+4:floor,flooring
+5:tree,trees
+6:ceiling
+7:road,route,street,roads,streets,routes
+8:bed,beds
+9:windowpane,window,windows
+10:grass,grass field
+11:cabinet,cabinets,wall mounted cabine
+12:sidewalk,pavement
+13:person,child,girl,boy,woman,man,people,children,girls,boys,women,men
+14:earth,ground
+15:door,double door,doors
+16:table,tables,tablecloth
+17:mountain,mount,mountains
+18:plant,flora,plant life,plants,bushes
+19:curtain,drape,drapery,mantle,pall
+20:chair,chairs
+21:car,automobile,cars
+22:water
+23:painting,picture,paintings,pictures,wallart,framed canvas
+24:sofa,couch,sofas,couches
+25:shelf,shelves
+26:house exterior
+27:sea,ocean
+28:mirror,mirrors
+29:rug,carpet,carpeting
+30:field
+31:armchair,armchairs
+32:seat,seats
+33:fence,fencing
+34:desk,desks
+35:rock,stone,rocks,stones
+36:wardrobe,closet,press,wardrobes,closets
+37:lamp,lamps
+38:bathtub,bathing tub,bath,tub
+39:railing,rail
+40:cushion,cushions
+41:pedestal
+42:box,boxes
+43:column,pillar
+44:signboard,sign,signboards,signs
+45:chest of drawers,chest,bureau,dresser
+46:counter
+47:sand
+48:sink
+49:skyscraper,skyscrapers
+50:fireplace,hearth,open fireplace
+51:refrigerator,icebox
+52:grandstand,covered stand
+53:path
+54:stairs,steps
+55:runway
+56:case,display case,showcase,vitrine
+57:pool table,billiard table,snooker table
+58:pillow,pillows
+59:screen door,shower door
+60:stairway,staircase
+61:river
+62:bridge,span
+63:bookcase
+64:window screen,door screen
+65:coffee table,cocktail table
+66:toilet,commode,crapper,potty
+67:flower,flowers
+68:book,books
+69:hill
+70:bench,benches
+71:countertop,counter top,worktop
+72:stove,kitchen stove,kitchen range,kitchen range,cooking stove
+73:palm tree,palm trees
+74:kitchen island
+75:computer,computing machine,computing device,data processor,electronic computer,information processing system
+76:swivel chair
+77:boat
+78:bar
+79:arcade machine,arcade machines
+80:hovel,hut,hutch,shack,shanty
+81:bus,autobus,double-decker,jitney,motorbus,motorcoach,omnibus,passenger vehicle
+82:towel
+83:light bulb,lightbulb,bulb,incandescent lamp,electric light,electric-light bulb
+84:truck,motortruck
+85:tower,towers
+86:chandelier,pendant,pendent
+87:awning,sunshade,sunblind
+88:streetlight,street lamp
+89:booth,cubicle,stall,kiosk
+90:television receiver,television,television set,tv,tv set
+91:airplane,aeroplane,airplanes,aeroplanes
+92:dirt track
+93:apparel,wearing apparel,dress,clothes
+94:pole
+95:land,soil
+96:bannister,banister,balustrade,balusters,handrail
+97:escalator,moving staircase,moving stairway
+98:ottoman,pouf,pouffe,puff,hassock
+99:bottle,bottles,water bottle
+100:buffet,sideboard
+101:poster,posting,placard,notice,bill,card
+102:stage
+103:van
+104:ship
+105:fountain
+106:conveyer belt,conveyor belt,conveyer,conveyor,transporter
+107:canopy
+108:washer,automatic washer,washing machine
+109:plaything,toy,toys
+110:swimming pool,swimming bath
+111:stool,stools
+112:barrel,cask,barrels,casks
+113:basket,handbasket
+114:waterfall,falls
+115:tent,collapsible shelter
+116:bag,bags,gift bag,paper bag
+117:minibike,motorbike
+118:cradle
+119:oven
+120:ball,balls
+121:food,solid food
+122:step,stair
+123:tank,storage tank
+124:trade name,brand name,brand,marque
+125:microwave,microwave oven
+126:plant pots,plant pot,flower pot,flowerpot,planter
+127:animal,animate being,dog,cat,horse,cow,sheep,zebra,girraffe,bird
+128:bicycle,bike
+129:lake
+130:dishwasher,dish washer,dishwashing machine
+131:projection screen
+132:blanket,cover
+133:sculpture,sculptures
+134:exhaust hood
+135:sconce,sconce lamp,sconce light
+136:vase,vases
+137:traffic light,traffic signal,traffic lights
+138:tray,trays
+139:ashcan,trash can,garbage can,wastebin,ash bin,ash-bin,ashbin,dustbin,trash barrel,trash bin
+140:ceiling fan,floor fan
+141:pier,wharf,wharfage,dock
+142:crt screen
+143:plate,plates
+144:monitor,monitoring device,monitors
+145:bulletin board,notice board
+146:shower
+147:radiator
+148:cup,cups,drinking glass,drinking glasses
+149:clock
+150:flag,flags
