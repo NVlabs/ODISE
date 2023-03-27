@@ -14,6 +14,8 @@ This repository is the official implementation of ODISE introduced in the paper:
 [*Shalini De Mello*](https://research.nvidia.com/person/shalini-de-mello)
 CVPR 2023 Highlight. (*equal contribution)
 
+For business inquiries, please visit our website and submit the form: [NVIDIA Research Licensing](https://www.nvidia.com/en-us/research/inquiries/).
+
 ![teaser](figs/github_arch.gif)
 
 ## Visual Results
