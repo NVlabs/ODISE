@@ -9,12 +9,9 @@
 # ------------------------------------------------------------------------------
 # Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
-# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
-# property and proprietary rights in and to this material, related
-# documentation and any modifications thereto. Any use, reproduction,
-# disclosure or distribution of this material and related documentation
-# without an express license agreement from NVIDIA CORPORATION or
-# its affiliates is strictly prohibited.
+# This work is made available under the Nvidia Source Code License.
+# To view a copy of this license, visit
+# https://github.com/NVlabs/ODISE/blob/main/LICENSE
 #
 # Written by Jiarui Xu
 # ------------------------------------------------------------------------------
