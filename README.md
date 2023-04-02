@@ -159,8 +159,8 @@ See [Getting Started with ODISE](GETTING_STARTED.md) for detailed instuctions on
 * Run the demo on Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NVlabs/ODISE/blob/master/demo/demo.ipynb)
 
 
-**Important Note**: ODISE links to the original pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt). When you run the `demo/demo.py` script for the very first time, besides ODISE's pre-trained models, it will also automaticlaly download the pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt), from their original sources, to your local directories `$HOME/.torch/` and `$HOME/.cache/clip`, respectively.
-These pre-trained models are subject to their authors' original licencse terms at [Stable Diffusion](https://github.com/CompVis/stable-diffusion) and [CLIP](https://github.com/openai/CLIP), respectively.
+**Important Note**: When you run the `demo/demo.py` script for the very first time, besides ODISE's pre-trained models, it will also automaticlaly download the pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt), from their original sources, to your local directories `$HOME/.torch/` and `$HOME/.cache/clip`, respectively.
+The pre-trained models for Stable Diffusion and CLIP are subject to their original licencse terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion) and [CLIP](https://github.com/openai/CLIP), respectively.
 
 * To run ODISE's demo from the command line:
 
