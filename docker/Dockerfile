@@ -53,8 +53,7 @@ RUN apt-get update && apt-get install -y \
     libswresample-dev \
     less \
     groff \
-    mpich \
-    nvidia-cuda-dev
+    mpich 
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -71,6 +70,9 @@ RUN ln -sf /usr/share/zoneinfo/US/Pacific /etc/localtime
 
 # Set CUDA_ROOT
 RUN export CUDA_HOME="/usr/local/cuda"
+
+# Install pytorch
+#RUN conda install pytorch torchvision cudatoolkit=11.1 -c pytorch -c conda-forge -y
 
 # Install zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.1/zsh-in-docker.sh)" -t robbyrussell -p git
