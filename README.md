@@ -42,11 +42,11 @@ For business inquiries, please visit our website and submit the form: [NVIDIA Re
 If you find our work useful in your research, please cite:
 
 ```BiBTeX
-@article{xu2022odise,
-  author    = {Xu, Jiarui and Liu, Sifei and Vahdat, Arash and Byeon, Wonmin and Wang, Xiaolong and De Mello, Shalini},
-  title     = {{ODISE: Open-Vocabulary Panoptic Segmentation with Text-to-Image Diffusion Models}},
-  journal   = {arXiv preprint arXiv: 2303.04803},
-  year      = {2023},
+@article{xu2023odise,
+  title={{Open-Vocabulary Panoptic Segmentation with Text-to-Image Diffusion Models}},
+  author={Xu, Jiarui and Liu, Sifei and Vahdat, Arash and Byeon, Wonmin and Wang, Xiaolong and De Mello, Shalini},
+  journal={arXiv preprint arXiv:2303.04803},
+  year={2023}
 }
 ```
 
@@ -88,7 +88,7 @@ supervision on [COCO's](https://cocodataset.org/#home) entire training set.
 ODISE's pre-trained models are subject to the [Creative Commons — Attribution-NonCommercial-ShareAlike 4.0 International — CC BY-NC-SA 4.0 License](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) terms.
 Each model contains 28.1M trainable parameters.
 The download links for these models are provided in the table below.
-When you run the `demo/demo.py` script for the very first time, it will also automatically download ODISE's pre-trained model to your local folder `$HOME/.torch/iopath_cache/NVlabs/ODISE/releases/download/v1.0.0/`.
+When you run the `demo/demo.py` or inference script for the very first time, it will also automatically download ODISE's pre-trained model to your local folder `$HOME/.torch/iopath_cache/NVlabs/ODISE/releases/download/v1.0.0/`.
 
 <table>
 <thead>
@@ -151,7 +151,7 @@ When you run the `demo/demo.py` script for the very first time, it will also aut
 ## Get Started
 See [Preparing Datasets for ODISE](datasets/README.md).
 
-See [Getting Started with ODISE](GETTING_STARTED.md) for detailed instuctions on training and inference with ODISE.
+See [Getting Started with ODISE](GETTING_STARTED.md) for detailed instructions on training and inference with ODISE.
 ## Demo
 
 * Integrated into [Huggingface Spaces 🤗](https://huggingface.co/spaces) using [Gradio](https://github.com/gradio-app/gradio). Try out the web demo: [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/xvjiarui/ODISE)
@@ -160,7 +160,7 @@ See [Getting Started with ODISE](GETTING_STARTED.md) for detailed instuctions on
 
 
 **Important Note**: When you run the `demo/demo.py` script for the very first time, besides ODISE's pre-trained models, it will also automaticlaly download the pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt), from their original sources, to your local directories `$HOME/.torch/` and `$HOME/.cache/clip`, respectively.
-The pre-trained models for Stable Diffusion and CLIP are subject to their original licencse terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion) and [CLIP](https://github.com/openai/CLIP), respectively.
+The pre-trained models for Stable Diffusion and CLIP are subject to their original license terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion) and [CLIP](https://github.com/openai/CLIP), respectively.
 
 * To run ODISE's demo from the command line:
 

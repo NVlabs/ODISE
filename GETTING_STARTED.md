@@ -4,7 +4,7 @@ This document provides a brief introduction on how to infer with and train ODISE
 
 For further reading, please refer to [Getting Started with Detectron2](https://github.com/facebookresearch/detectron2/blob/master/GETTING_STARTED.md).
 
-**Important Note**: ODISE's `demo/demo.py` and `tools/train_net.py` scripts link to the original pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt). When you run them for the very first time, these scripts will automaticlaly download the pre-trained models for Stable Diffuson and CLIP, from their original sources, to your local directories `$HOME/.torch/` and `$HOME/.cache/clip`, respectively. Their use is subject to the original licencse terms defined at [https://github.com/CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion) and [https://github.com/openai/CLIP](https://github.com/openai/CLIP), respectively.
+**Important Note**: ODISE's `demo/demo.py` and `tools/train_net.py` scripts link to the original pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt). When you run them for the very first time, these scripts will automatically download the pre-trained models for Stable Diffuson and CLIP, from their original sources, to your local directories `$HOME/.torch/` and `$HOME/.cache/clip`, respectively. Their use is subject to the original license terms defined at [https://github.com/CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion) and [https://github.com/openai/CLIP](https://github.com/openai/CLIP), respectively.
 
 
 ### Inference Demo with Pre-trained ODISE Models
@@ -31,7 +31,7 @@ to understand its behavior. Some common arguments are:
 * To run __on the cpu__, add `train.device=cpu` at the end.
 * To save outputs to a directory (for images) or a file (for webcam or video), use the `--output` option.
 
-The default bevahior is to append the user-provided extra vocabulary to the labels from COCO, ADE20K and LVIS.
+The default behavior is to append the user-provided extra vocabulary to the labels from COCO, ADE20K and LVIS.
 To use **only** the user-provided vocabulary use `--label ""`.
 
 ```
@@ -61,8 +61,8 @@ For 4-node (32-GPUs) AMP-based training, run:
 (node3)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 3 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --amp
 ```
 
-Not that our default traning configurations are designed for 32 GPUs.
-Since we use the ADAMW optimizer, it is not clear as to how to scale the learning rate with batch size.
+Not that our default training configurations are designed for 32 GPUs.
+Since we use the AdamW optimizer, it is not clear as to how to scale the learning rate with batch size.
 However, we provide the ability to automatically scale the learning rate and the batch size for any number of GPUs used for training by passing in the`--ref $REFERENCE_WORLD_SIZE` argument. 
 For example, if you set `$REFERENCE_WORLD_SIZE=32` while training on 8 GPUs, the batch size and learning rate will be set to 8/32 = 0.25 of the original ones.
 
