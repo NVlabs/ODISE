@@ -31,6 +31,18 @@ to understand its behavior. Some common arguments are:
 * To run __on the cpu__, add `train.device=cpu` at the end.
 * To save outputs to a directory (for images) or a file (for webcam or video), use the `--output` option.
 
+The default bevahior is to append the user-provided extra vocabulary to the labels from COCO, ADE20K and LVIS.
+To use **only** the user-provided vocabulary use `--label ""`.
+
+```
+python demo/demo.py --input demo/examples/purse.jpeg --output demo/purse_pred.jpg --label "" --vocab "purse"
+```
+
+or
+
+```
+python demo/demo.py --input demo/examples/purse.jpeg --output demo/purse_pred.jpg --label "" --caption "there is a black purse"
+```
 
 ### Command line-based Training & Evaluation
 
