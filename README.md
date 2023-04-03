@@ -170,7 +170,7 @@ The pre-trained models for Stable Diffusion and CLIP are subject to their origin
     The output is saved in `demo/coco_pred.jpg`. For more detailed options for `demo/demo.py` see [Getting Started with ODISE](GETTING_STARTED.md).
     
   
-* To run the Gradio demo locally:
+* To run the [Gradio](https://github.com/gradio-app/gradio) demo locally:
     ```shell
     python demo/app.py
     ```

@@ -52,6 +52,15 @@ class DisableLogger:
         logging.disable(logging.NOTSET)
 
 
+def add_device_property(cls):
+    class TempClass(cls):
+        pass
+
+    TempClass.device = property(lambda m: next(m.parameters()).device)
+
+    return TempClass
+
+
 class LatentDiffusion(nn.Module):
 
     LDM_CONFIGS = {
@@ -81,7 +90,9 @@ class LatentDiffusion(nn.Module):
         with DisableLogger():
             self.ldm: _LatentDiffusion = build_ldm_from_cfg(ldm_cfg)
         # hack to replace device property
-        self.ldm.cond_stage_model.__class__.device = property(lambda m: next(m.parameters()).device)
+        self.ldm.cond_stage_model.__class__ = add_device_property(
+            self.ldm.cond_stage_model.__class__
+        )
 
         self.init_checkpoint = init_checkpoint
         self.load_pretrain()

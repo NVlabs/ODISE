@@ -285,36 +285,42 @@ class CategoryODISE(ODISE):
             outputs.update(self.category_head(outputs))
 
             outputs["pred_logits"] = self.cal_pred_logits(outputs)
-            # [B, Q, K]
-            outputs["pred_open_logits"] = outputs["pred_logits"][..., :-1]
 
-            mask_cls_results = outputs["pred_logits"]
             mask_pred_results = outputs["pred_masks"]
+            mask_cls_results = outputs["pred_logits"]
 
             if self.clip_head is not None:
-                outputs.update(self.clip_head(outputs))
+                if self.clip_head.with_bg:
+                    # [B, Q, K+1]
+                    outputs["pred_open_logits"] = outputs["pred_logits"]
+                    outputs.update(self.clip_head(outputs))
+                    mask_cls_results = outputs["pred_open_logits"]
+                else:
+                    # [B, Q, K]
+                    outputs["pred_open_logits"] = outputs["pred_logits"][..., :-1]
+                    outputs.update(self.clip_head(outputs))
 
-            if "pred_open_logits" in outputs:
-                open_logits = outputs["pred_open_logits"]
+                    # merge with bg scores
+                    open_logits = outputs["pred_open_logits"]
 
-                # in case the prediction is not binary
-                binary_probs = torch.zeros(
-                    (mask_cls_results.shape[0], mask_cls_results.shape[1], 2),
-                    device=mask_cls_results.device,
-                    dtype=mask_cls_results.dtype,
-                )
-                binary_probs[..., -1] = F.softmax(mask_cls_results, dim=-1)[..., -1]
-                binary_probs[..., 0] = 1 - binary_probs[..., -1]
+                    # in case the prediction is not binary
+                    binary_probs = torch.zeros(
+                        (mask_cls_results.shape[0], mask_cls_results.shape[1], 2),
+                        device=mask_cls_results.device,
+                        dtype=mask_cls_results.dtype,
+                    )
+                    binary_probs[..., -1] = F.softmax(mask_cls_results, dim=-1)[..., -1]
+                    binary_probs[..., 0] = 1 - binary_probs[..., -1]
 
-                masks_class_probs = F.softmax(open_logits, dim=-1)
-                # [B, Q, K+1]
-                mask_cls_results = torch.cat(
-                    [masks_class_probs * binary_probs[..., 0:1], binary_probs[..., 1:2]], dim=-1
-                )
-                # NOTE: mask_cls_results is already multiplied with logit_scale,
-                # avoid double scale, which cause overflow in softmax
-                # mask_cls_results = torch.log(mask_cls_results + 1e-8) * outputs["logit_scale"]
-                mask_cls_results = torch.log(mask_cls_results + 1e-8)
+                    masks_class_probs = F.softmax(open_logits, dim=-1)
+                    # [B, Q, K+1]
+                    mask_cls_results = torch.cat(
+                        [masks_class_probs * binary_probs[..., 0:1], binary_probs[..., 1:2]], dim=-1
+                    )
+                    # NOTE: mask_cls_results is already multiplied with logit_scale,
+                    # avoid double scale, which cause overflow in softmax
+                    # mask_cls_results = torch.log(mask_cls_results + 1e-8) * outputs["logit_scale"]
+                    mask_cls_results = torch.log(mask_cls_results + 1e-8)
 
             # upsample masks
             mask_pred_results = F.interpolate(
@@ -549,18 +555,19 @@ class CaptionODISE(ODISE):
             if self.clip_head is not None:
                 outputs.update(self.clip_head(outputs))
 
-            if mask_cls_results.shape[-1] == 2 and "pred_open_logits" in outputs:
-                open_logits = outputs["pred_open_logits"]
-                binary_probs = F.softmax(mask_cls_results, dim=-1)
-                masks_class_probs = F.softmax(open_logits, dim=-1)
-                # [B, Q, K+1]
-                mask_cls_results = torch.cat(
-                    [masks_class_probs * binary_probs[..., 0:1], binary_probs[..., 1:2]], dim=-1
-                )
-                # NOTE: mask_cls_results is already multiplied with logit_scale,
-                # avoid double scale, which cause overflow in softmax
-                # mask_cls_results = torch.log(mask_cls_results + 1e-8) * outputs["logit_scale"]
-                mask_cls_results = torch.log(mask_cls_results + 1e-8)
+            assert mask_cls_results.shape[-1] == 2 and "pred_open_logits" in outputs
+
+            open_logits = outputs["pred_open_logits"]
+            binary_probs = F.softmax(mask_cls_results, dim=-1)
+            masks_class_probs = F.softmax(open_logits, dim=-1)
+            # [B, Q, K+1]
+            mask_cls_results = torch.cat(
+                [masks_class_probs * binary_probs[..., 0:1], binary_probs[..., 1:2]], dim=-1
+            )
+            # NOTE: mask_cls_results is already multiplied with logit_scale,
+            # avoid double scale, which cause overflow in softmax
+            # mask_cls_results = torch.log(mask_cls_results + 1e-8) * outputs["logit_scale"]
+            mask_cls_results = torch.log(mask_cls_results + 1e-8)
 
             # upsample masks
             mask_pred_results = F.interpolate(
@@ -1420,6 +1427,8 @@ class PoolingCLIPHead(WordEmbed):
         beta=0.65,
         prompt="photo",
         train_labels=None,
+        normalize_logits=True,
+        bg_labels=None,
     ):
         super(WordEmbed, self).__init__()
         self.clip_model_name = clip_model_name
@@ -1438,9 +1447,15 @@ class PoolingCLIPHead(WordEmbed):
             self.train_labels = get_openseg_labels("coco_panoptic", prompt_engineered=True)
         else:
             self.train_labels = train_labels
+        self.bg_labels = bg_labels
+        self.normalize_logits = normalize_logits
 
     def extra_repr(self) -> str:
         return f"clip_model_name={self.clip_model_name},\n"
+
+    @property
+    def with_bg(self):
+        return self.bg_labels is not None
 
     def prepare_targets(self, outputs, targets):
 
@@ -1455,14 +1470,21 @@ class PoolingCLIPHead(WordEmbed):
         assert not self.training, "PoolingCLIPHead only supports inference"
         assert targets is None
         assert self.test_labels is not None
+        pred_open_logits = outputs.pop("pred_open_logits")
 
         labels = prompt_labels(self.test_labels, self.prompt)
+        if self.with_bg and pred_open_logits.shape[-1] == len(self.test_labels) + 1:
+            labels.append(self.bg_labels)
+
         category_overlapping_list = []
 
         train_labels = {l for label in self.train_labels for l in label}
 
         for test_label in self.test_labels:
             category_overlapping_list.append(not set(train_labels).isdisjoint(set(test_label)))
+
+        if self.with_bg and pred_open_logits.shape[-1] == len(self.test_labels) + 1:
+            category_overlapping_list.append(False)
 
         category_overlapping_mask = torch.tensor(
             category_overlapping_list, device=outputs["images"].device, dtype=torch.long
@@ -1472,49 +1494,44 @@ class PoolingCLIPHead(WordEmbed):
 
         mask_pred_results = outputs["pred_masks"]
 
-        if "distill_mask_embed" in outputs:
-            mask_pred_open_logits = self.clip.pred_logits(
-                outputs["distill_mask_embed"], text_embed, labels
+        clip_results = self.clip(
+            outputs["images"],
+            mask_pred_results,
+            text_embed,
+            labels,
+        )
+
+        mask_pred_open_logits = clip_results["mask_pred_open_logits"]
+
+        if self.normalize_logits:
+            pred_open_prob = pred_open_logits.softmax(dim=-1)
+
+            mask_pred_open_prob = mask_pred_open_logits.softmax(dim=-1)
+
+            # NOTE: logits are multiplied with logit_scale,
+            # avoid double scale, which cause overflow in softmax
+            pred_open_logits_base = (
+                (pred_open_prob ** (1 - self.alpha) * mask_pred_open_prob**self.alpha).log()
+                # * outputs["logit_scale"]
+                * category_overlapping_mask
+            )
+
+            pred_open_logits_novel = (
+                (pred_open_prob ** (1 - self.beta) * mask_pred_open_prob**self.beta).log()
+                # * outputs["logit_scale"]
+                * (1 - category_overlapping_mask)
             )
         else:
-            clip_results = self.clip(
-                outputs["images"],
-                mask_pred_results,
-                text_embed,
-                labels,
+
+            # NOTE: this version ignore the scale difference during ensemble,
+
+            pred_open_logits_base = (
+                pred_open_logits * (1 - self.alpha)
+                + mask_pred_open_logits * self.alpha * category_overlapping_mask
             )
-
-            mask_pred_open_logits = clip_results["mask_pred_open_logits"]
-
-        pred_open_logits = outputs.pop("pred_open_logits")
-        pred_open_prob = pred_open_logits.softmax(dim=-1)
-
-        mask_pred_open_prob = mask_pred_open_logits.softmax(dim=-1)
-
-        # NOTE: logits are multiplied with logit_scale,
-        # avoid double scale, which cause overflow in softmax
-        pred_open_logits_base = (
-            (pred_open_prob ** (1 - self.alpha) * mask_pred_open_prob**self.alpha).log()
-            # * outputs["logit_scale"]
-            * category_overlapping_mask
-        )
-
-        pred_open_logits_novel = (
-            (pred_open_prob ** (1 - self.beta) * mask_pred_open_prob**self.beta).log()
-            # * outputs["logit_scale"]
-            * (1 - category_overlapping_mask)
-        )
-
-        # NOTE: this version ignore the scale difference during ensemble,
-        # but we found it yields similar accuracy as above one
-
-        # pred_open_logits_base = (
-        #     pred_open_logits * (1 - self.alpha)
-        #     + mask_pred_open_logits * self.alpha * category_overlapping_mask
-        # )
-        # pred_open_logits_novel = pred_open_logits * (
-        #     1 - self.beta
-        # ) + mask_pred_open_logits * self.beta * (1 - category_overlapping_mask)
+            pred_open_logits_novel = pred_open_logits * (
+                1 - self.beta
+            ) + mask_pred_open_logits * self.beta * (1 - category_overlapping_mask)
 
         pred_open_logits = pred_open_logits_base + pred_open_logits_novel
 

@@ -136,21 +136,30 @@ class VisualizationDemo(object):
         return predictions, vis_output
 
 
-cfg = model_zoo.get_config("Panoptic/odise_label_coco_50e.py", trained=True)
+models = {}
+for model_name, cfg_name in zip(
+    ["ODISE(Label)", "ODISE(Caption)"],
+    ["Panoptic/odise_label_coco_50e.py", "Panoptic/odise_caption_coco_50e.py"],
+):
 
-cfg.model.overlap_threshold = 0
-cfg.train.device = "cuda" if torch.cuda.is_available() else "cpu"
-seed_all_rng(42)
+    cfg = model_zoo.get_config(cfg_name, trained=True)
 
-dataset_cfg = cfg.dataloader.test
-wrapper_cfg = cfg.dataloader.wrapper
+    cfg.model.overlap_threshold = 0
+    cfg.model.clip_head.alpha = 0.35
+    cfg.model.clip_head.beta = 0.65
+    cfg.train.device = "cuda" if torch.cuda.is_available() else "cpu"
+    seed_all_rng(42)
 
-aug = instantiate(dataset_cfg.mapper).augmentations
+    dataset_cfg = cfg.dataloader.test
+    wrapper_cfg = cfg.dataloader.wrapper
 
-model = instantiate_odise(cfg.model)
-model.to(torch.float16)
-model.to(cfg.train.device)
-ODISECheckpointer(model).load(cfg.train.init_checkpoint)
+    aug = instantiate(dataset_cfg.mapper).augmentations
+
+    model = instantiate_odise(cfg.model)
+    model.to(torch.float16)
+    model.to(cfg.train.device)
+    ODISECheckpointer(model).load(cfg.train.init_checkpoint)
+    models[model_name] = model
 
 
 title = "ODISE"
@@ -234,13 +243,14 @@ def build_demo_classes_and_metadata(vocab, label_list):
     return demo_classes, demo_metadata
 
 
-def inference(image_path, vocab, label_list):
+def inference(image_path, vocab, label_list, model_name):
 
     logger.info("building class names")
     demo_classes, demo_metadata = build_demo_classes_and_metadata(vocab, label_list)
     with ExitStack() as stack:
+        logger.info(f"loading model {model_name}")
         inference_model = OpenPanopticInference(
-            model=model,
+            model=models[model_name],
             labels=demo_classes,
             metadata=demo_metadata,
             semantic_on=False,
@@ -269,6 +279,9 @@ with gr.Blocks(title=title) as demo:
     with gr.Row().style(equal_height=True, mobile_collapse=True):
         with gr.Column(scale=3, variant="panel") as input_component_column:
             input_image_gr = gr.inputs.Image(type="filepath")
+            model_name_gr = gr.inputs.Dropdown(
+                label="Model", choices=["ODISE(Label)", "ODISE(Caption)"], default="ODISE(Label)"
+            )
             extra_vocab_gr = gr.inputs.Textbox(default="", label="Extra Vocabulary")
             category_list_gr = gr.inputs.CheckboxGroup(
                 choices=["COCO (133 categories)", "ADE (150 categories)", "LVIS (1203 categories)"],
@@ -294,7 +307,7 @@ with gr.Blocks(title=title) as demo:
 
     submit_btn.click(
         inference,
-        input_components,
+        input_components + [model_name_gr],
         output_components,
         api_name="predict",
         scroll_to_output=True,

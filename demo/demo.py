@@ -27,6 +27,7 @@ import time
 import warnings
 from contextlib import ExitStack
 import cv2
+import nltk
 import torch
 import tqdm
 from detectron2.config import LazyConfig, instantiate
@@ -47,6 +48,9 @@ from odise.checkpoint import ODISECheckpointer
 from odise.config import instantiate_odise
 from odise.data import get_openseg_labels
 from odise.engine.defaults import get_model_from_module
+
+nltk.download("popular", quiet=True)
+nltk.download("universal_tagset", quiet=True)
 
 # constants
 WINDOW_NAME = "ODISE demo"
@@ -82,6 +86,52 @@ LVIS_CLASSES = get_openseg_labels("lvis_1203", True)
 LVIS_COLORS = list(
     itertools.islice(itertools.cycle([c["color"] for c in COCO_CATEGORIES]), len(LVIS_CLASSES))
 )
+
+
+def get_nouns(caption, with_preposition):
+    if with_preposition:
+        # Taken from Su Nam Kim Paper...
+        grammar = r"""
+            NBAR:
+                {<NN.*|JJ>*<NN.*>}  # Nouns and Adjectives, terminated with Nouns
+
+            NP:
+                {<NBAR><IN><NBAR>}  # Above, connected with in/of/etc...
+                {<NBAR>} # If pattern is not found, just a single NBAR is ok
+        """
+    else:
+        # Taken from Su Nam Kim Paper...
+        grammar = r"""
+            NBAR:
+                {<NN.*|JJ>*<NN.*>}  # Nouns and Adjectives, terminated with Nouns
+
+            NP:
+                {<NBAR>} # If pattern is not found, just a single NBAR is ok
+        """
+    tokenized = nltk.word_tokenize(caption)
+    chunker = nltk.RegexpParser(grammar)
+
+    chunked = chunker.parse(nltk.pos_tag(tokenized))
+    continuous_chunk = []
+    current_chunk = []
+
+    for subtree in chunked:
+        if isinstance(subtree, nltk.Tree):
+            current_chunk.append(" ".join([token for token, pos in subtree.leaves()]))
+        elif current_chunk:
+            named_entity = " ".join(current_chunk)
+            if named_entity not in continuous_chunk:
+                continuous_chunk.append(named_entity)
+                current_chunk = []
+        else:
+            continue
+
+    if current_chunk:
+        named_entity = " ".join(current_chunk)
+        if named_entity not in continuous_chunk:
+            continuous_chunk.append(named_entity)
+
+    return continuous_chunk
 
 
 class VisualizationDemo(object):
@@ -246,10 +296,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--label",
         help="label set to use, could be multiple options from 'COCO', 'ADE' and 'LVIS'.",
-        choices=["COCO", "ADE", "LVIS"],
+        choices=["COCO", "ADE", "LVIS", ""],
         nargs="+",
         default=["COCO", "ADE", "LVIS"],
     )
+    parser.add_argument("--caption", help="caption contains nouns (noun phrases) to be segmented")
     parser.add_argument(
         "opts",
         help="Modify config options at the end of the command, " "in 'path.key=value' format",
@@ -263,6 +314,8 @@ if __name__ == "__main__":
 
     cfg = LazyConfig.load(args.config_file)
     cfg.model.overlap_threshold = 0
+    cfg.model.clip_head.alpha = 0.35
+    cfg.model.clip_head.beta = 0.65
     seed_all_rng(42)
 
     dataset_cfg = cfg.dataloader.test
@@ -273,6 +326,15 @@ if __name__ == "__main__":
     if args.vocab:
         for words in args.vocab.split(";"):
             extra_classes.append([word.strip() for word in words.split(",")])
+
+    if args.caption:
+        caption_words = []
+        caption_words.extend(get_nouns(args.caption, True))
+        caption_words.extend(get_nouns(args.caption, False))
+        for word in list(set(caption_words)):
+            extra_classes.append([word.strip()])
+
+    logger.info(f"extra classes: {extra_classes}")
     extra_colors = [random_color(rgb=True, maximum=1) for _ in range(len(extra_classes))]
 
     # demo_thing_classes = extra_classes + COCO_THING_CLASSES + ADE_THING_CLASSES + LVIS_CLASSES
