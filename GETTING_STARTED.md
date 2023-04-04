@@ -61,7 +61,7 @@ For 4-node (32-GPUs) AMP-based training, run:
 (node3)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 3 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --amp
 ```
 
-Not that our default training configurations are designed for 32 GPUs.
+Note that our default training configurations are designed for 32 GPUs.
 Since we use the AdamW optimizer, it is not clear as to how to scale the learning rate with batch size.
 However, we provide the ability to automatically scale the learning rate and the batch size for any number of GPUs used for training by passing in the`--ref $REFERENCE_WORLD_SIZE` argument. 
 For example, if you set `$REFERENCE_WORLD_SIZE=32` while training on 8 GPUs, the batch size and learning rate will be set to 8/32 = 0.25 of the original ones.
