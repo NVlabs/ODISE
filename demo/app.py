@@ -247,6 +247,8 @@ def inference(image_path, vocab, label_list, model_name):
 
     logger.info("building class names")
     demo_classes, demo_metadata = build_demo_classes_and_metadata(vocab, label_list)
+    if model_name is None:
+        model_name = "ODISE(Label)"
     with ExitStack() as stack:
         logger.info(f"loading model {model_name}")
         inference_model = OpenPanopticInference(
