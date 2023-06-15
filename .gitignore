@@ -53,14 +53,6 @@ _darcs
 /models
 /snippet
 
-# vision
-local_data/*
-vis_imgs/*
-viz_debug/*
-viz_maskformer/*
-viz_dataset/*
-viz_feat/*
-
 # Mac
 *.DS_Store
 
