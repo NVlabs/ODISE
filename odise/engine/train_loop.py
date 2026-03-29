@@ -18,12 +18,13 @@ import itertools
 import logging
 import numpy as np
 import time
+from math import inf
 from typing import Iterable, Mapping, Union
+
 import detectron2.utils.comm as comm
 import torch
 from detectron2.engine import SimpleTrainer as _SimpleTrainer
 from detectron2.utils.events import get_event_storage
-from torch._six import inf
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 from odise.utils.parameter_count import parameter_count_table
@@ -197,9 +198,10 @@ class NativeScalerWithGradNormCount:
     state_dict_key = "amp_scaler"
 
     def __init__(self):
-        from torch.cuda.amp import GradScaler
+        from torch.amp import GradScaler
 
-        self._scaler = GradScaler()
+        assert torch.cuda.is_available(), "AMPTrainer requires CUDA"
+        self._scaler = GradScaler('cuda')
 
     def __call__(
         self, loss, optimizer, clip_grad=None, parameters=None, create_graph=False, update_grad=True
@@ -263,7 +265,7 @@ class AMPTrainer(SimpleTrainer):
         """
         assert self.model.training, "[AMPTrainer] model was changed to eval mode!"
         assert torch.cuda.is_available(), "[AMPTrainer] CUDA is required for AMP training!"
-        from torch.cuda.amp import autocast
+        from torch.amp import autocast
 
         start = time.perf_counter()
         data = next(self._data_loader_iter)
@@ -277,7 +279,7 @@ class AMPTrainer(SimpleTrainer):
             data["runner_meta"] = dict()
             data["runner_meta"]["iter"] = self.iter
             data["runner_meta"]["max_iter"] = self.max_iter
-        with autocast():
+        with autocast('cuda'):
             loss_dict = self.model(data)
             if isinstance(loss_dict, torch.Tensor):
                 losses = loss_dict

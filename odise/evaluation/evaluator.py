@@ -72,10 +72,10 @@ def inference_on_dataset(
     total_eval_time = 0
 
     if use_amp and torch.cuda.is_available():
-        from torch.cuda.amp import autocast
+        from torch.amp import autocast
+        amp_ctx = autocast('cuda')
     else:
-        # Use ExitStack as placeholder
-        autocast = nullcontext
+        amp_ctx = nullcontext()
 
     with ExitStack() as stack:
         if isinstance(model, nn.Module):
@@ -93,7 +93,7 @@ def inference_on_dataset(
                 total_eval_time = 0
 
             start_compute_time = time.perf_counter()
-            with autocast():
+            with amp_ctx:
                 outputs = model(inputs)
             if torch.cuda.is_available():
                 torch.cuda.synchronize()

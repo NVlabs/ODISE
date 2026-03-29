@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.init import xavier_uniform_, constant_, uniform_, normal_
-from torch.cuda.amp import autocast
+from torch.amp import autocast
 
 from detectron2.config import configurable
 from detectron2.layers import Conv2d, ShapeSpec, get_norm
@@ -312,7 +312,7 @@ class MSDeformAttnPixelDecoder(nn.Module):
         return ret
 
     def forward_features(self, features):
-        with autocast(enabled=not self.training and torch.is_autocast_enabled()):
+        with autocast('cuda', enabled=False):
             srcs = []
             pos = []
             # Reverse feature maps into top-down order (from low to high resolution)

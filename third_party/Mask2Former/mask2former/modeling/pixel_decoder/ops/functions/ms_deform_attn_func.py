@@ -23,8 +23,8 @@ try:
 except ModuleNotFoundError as e:
     info_string = (
         "\n\nPlease compile MultiScaleDeformableAttention CUDA op with the following commands:\n"
-        "\t`cd mask2former/modeling/pixel_decoder/ops`\n"
-        "\t`sh make.sh`\n"
+        "\t`cd third_party/Mask2Former`\n"
+        "\t`python setup.py build install`\n"
     )
     MSDA = None
 

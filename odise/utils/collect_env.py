@@ -22,14 +22,20 @@ import sys
 from collections import defaultdict
 import PIL
 import torch
-import torchvision
+try:
+    import torchvision
+except Exception:
+    torchvision = None
 from detectron2.utils.collect_env import (
     collect_torch_env,
     detect_compute_compatibility,
     get_env_module,
     test_nccl_ops,
 )
-from tabulate import tabulate
+try:
+    from tabulate import tabulate
+except Exception:
+    tabulate = None
 
 __all__ = ["collect_env_info"]
 
@@ -116,7 +122,7 @@ def collect_env_info():
             try:
                 # this is how torch/utils/cpp_extensions.py choose compiler
                 cxx = os.environ.get("CXX", "c++")
-                cxx = subprocess.check_output("'{}' --version".format(cxx), shell=True)
+                cxx = subprocess.check_output([cxx, "--version"])
                 cxx = cxx.decode("utf-8").strip().split("\n")[0]
             except subprocess.SubprocessError:
                 cxx = "Not found"
@@ -125,7 +131,7 @@ def collect_env_info():
             if has_cuda and CUDA_HOME is not None:
                 try:
                     nvcc = os.path.join(CUDA_HOME, "bin", "nvcc")
-                    nvcc = subprocess.check_output("'{}' -V".format(nvcc), shell=True)
+                    nvcc = subprocess.check_output([nvcc, "-V"])
                     nvcc = nvcc.decode("utf-8").strip().split("\n")[-1]
                 except subprocess.SubprocessError:
                     nvcc = "Not found"
@@ -184,22 +190,25 @@ def collect_env_info():
                 data.append(("TORCH_CUDA_ARCH_LIST", cuda_arch_list))
     data.append(("Pillow", PIL.__version__))
 
-    try:
-        data.append(
-            (
-                "torchvision",
-                str(torchvision.__version__) + " @" + os.path.dirname(torchvision.__file__),
+    if torchvision is None:
+        data.append(("torchvision", "not found"))
+    else:
+        try:
+            data.append(
+                (
+                    "torchvision",
+                    str(torchvision.__version__) + " @" + os.path.dirname(torchvision.__file__),
+                )
             )
-        )
-        if has_cuda:
-            try:
-                torchvision_C = importlib.util.find_spec("torchvision._C").origin
-                msg = detect_compute_compatibility(CUDA_HOME, torchvision_C)
-                data.append(("torchvision arch flags", msg))
-            except (ImportError, AttributeError):
-                data.append(("torchvision._C", "Not found"))
-    except AttributeError:
-        data.append(("torchvision", "unknown"))
+            if has_cuda:
+                try:
+                    torchvision_C = importlib.util.find_spec("torchvision._C").origin
+                    msg = detect_compute_compatibility(CUDA_HOME, torchvision_C)
+                    data.append(("torchvision arch flags", msg))
+                except (ImportError, AttributeError):
+                    data.append(("torchvision._C", "Not found"))
+        except AttributeError:
+            data.append(("torchvision", "unknown"))
 
     try:
         import fvcore
@@ -222,7 +231,10 @@ def collect_env_info():
     except (ImportError, AttributeError):
         data.append(("cv2", "Not found"))
 
-    env_str = tabulate(data) + "\n"
+    if tabulate is None:
+        env_str = "\n".join(f"{k}: {v}" for k, v in data) + "\n"
+    else:
+        env_str = tabulate(data) + "\n"
     env_str += collect_torch_env()
     return env_str
 

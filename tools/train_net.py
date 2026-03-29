@@ -39,7 +39,11 @@ from detectron2.utils import comm
 from detectron2.utils.events import JSONWriter
 from detectron2.utils.file_io import PathManager
 from detectron2.utils.logger import setup_logger
-from iopath.common.s3 import S3PathHandler
+import torch
+try:
+    from iopath.common.s3 import S3PathHandler
+except Exception:
+    S3PathHandler = None
 from omegaconf import OmegaConf
 
 from odise.checkpoint import ODISECheckpointer
@@ -50,7 +54,12 @@ from odise.engine.train_loop import AMPTrainer, SimpleTrainer
 from odise.evaluation import inference_on_dataset
 from odise.utils.events import CommonMetricPrinter, WandbWriter, WriterStack
 
-PathManager.register_handler(S3PathHandler())
+if S3PathHandler is not None:
+    try:
+        PathManager.register_handler(S3PathHandler())
+    except Exception:
+        # Optional dependency for S3 access. Boto3 may not be installed in CPU-only envs.
+        S3PathHandler = None
 
 logger = logging.getLogger("odise")
 
@@ -210,6 +219,32 @@ def do_test(cfg, model, *, final_iter=False, next_iter=0):
     return all_ret
 
 
+def _apply_cpu_fallback(cfg, args, logger):
+    if not getattr(args, "force_cpu", False) and torch.cuda.is_available():
+        return
+
+    if getattr(args, "force_cpu", False):
+        logger.warning("CPU-only execution requested via --force-cpu.")
+
+    if cfg.train.device == "cuda":
+        logger.warning("Forcing cpu execution by setting cfg.train.device=cpu.")
+        cfg.train.device = "cpu"
+
+    if getattr(args, "amp", False):
+        logger.warning("CPU execution requested. Forcing --amp disabled.")
+        args.amp = False
+
+    if cfg.train.amp.enabled:
+        logger.warning("AMP is enabled in config but unsupported on CPU. Disabling.")
+        cfg.train.amp.enabled = False
+
+    if getattr(args, "num_gpus", 1) != 1:
+        logger.warning(
+            "CPU execution uses single process only. Forcing --num-gpus=1."
+        )
+        args.num_gpus = 1
+
+
 def do_train(args, cfg):
     """
     Args:
@@ -235,8 +270,7 @@ def do_train(args, cfg):
         cfg.train.output_dir
     )
     # create writers at the beginning for W&B logging
-    if comm.is_main_process():
-        writers = default_writers(cfg)
+    writers = default_writers(cfg) if comm.is_main_process() else None
     comm.synchronize()
 
     # not sure why d2 use ExitStack(), maybe easier for multiple context
@@ -327,7 +361,6 @@ def main(args):
         cfg.train.output_dir = osp.join(cfg.train.output_dir, cfg.train.run_tag)
     if hasattr(args, "wandb") and args.wandb:
         cfg.train.wandb.enable_writer = args.wandb
-        cfg.train.wandb.enable_visualizer = args.wandb
     if hasattr(args, "amp") and args.amp:
         cfg.train.amp.enabled = args.amp
     if hasattr(args, "init_from") and args.init_from:
@@ -338,6 +371,7 @@ def main(args):
     cfg = LazyConfig.apply_overrides(cfg, args.opts)
     default_setup(cfg, args)
     logger = setup_logger(cfg.train.log_dir, distributed_rank=comm.get_rank(), name="odise")
+    _apply_cpu_fallback(cfg, args, logger)
 
     logger.info(f"Running with config:\n{LazyConfig.to_py(cfg)}")
 
@@ -380,6 +414,7 @@ def parse_args():
     parser.add_argument("--log-tag", type=str, help="tag of experiment")
     parser.add_argument("--wandb", action="store_true", help="Use W&B to log experiments")
     parser.add_argument("--amp", action="store_true", help="Use AMP for mixed precision training")
+    parser.add_argument("--force-cpu", action="store_true", help="Force CPU-only execution")
     parser.add_argument("--reference-world-size", "--ref", type=int)
 
     args = parser.parse_args()
@@ -389,6 +424,10 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    if args.force_cpu or not torch.cuda.is_available():
+        if args.num_gpus != 1:
+            print("CPU-only execution requested. Forcing --num-gpus=1.")
+        args.num_gpus = 1
     launch(
         main,
         args.num_gpus,

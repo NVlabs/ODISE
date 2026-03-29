@@ -80,7 +80,7 @@ class MSDeformAttn(nn.Module):
         constant_(self.output_proj.bias.data, 0.)
 
     def forward(self, query, reference_points, input_flatten, input_spatial_shapes, input_level_start_index, input_padding_mask=None):
-        """
+        r"""
         :param query                       (N, Length_{query}, C)
         :param reference_points            (N, Length_{query}, n_levels, 2), range in [0, 1], top-left (0,0), bottom-right (1, 1), including padding area
                                         or (N, Length_{query}, n_levels, 4), add additional (w, h) to form reference boxes
@@ -116,7 +116,7 @@ class MSDeformAttn(nn.Module):
         try:
             output = MSDeformAttnFunction.apply(
                 value, input_spatial_shapes, input_level_start_index, sampling_locations, attention_weights, self.im2col_step)
-        except:
+        except Exception:
             # CPU
             output = ms_deform_attn_core_pytorch(value, input_spatial_shapes, sampling_locations, attention_weights)
         # # For FLOPs calculation only

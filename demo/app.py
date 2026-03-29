@@ -9,9 +9,11 @@
 # ------------------------------------------------------------------------------
 
 import itertools
-import json
-from contextlib import ExitStack
-import gradio as gr
+from contextlib import ExitStack, nullcontext
+try:
+    import gradio as gr
+except Exception:
+    gr = None
 import torch
 from detectron2.config import instantiate
 from detectron2.data import MetadataCatalog
@@ -24,7 +26,6 @@ from detectron2.utils.logger import setup_logger
 from detectron2.utils.visualizer import ColorMode, Visualizer, random_color
 from mask2former.data.datasets.register_ade20k_panoptic import ADE20K_150_CATEGORIES
 from PIL import Image
-from torch.cuda.amp import autocast
 
 from odise import model_zoo
 from odise.checkpoint import ODISECheckpointer
@@ -83,6 +84,7 @@ class VisualizationDemo(object):
         self.aug = aug
         self.cpu_device = torch.device("cpu")
         self.instance_mode = instance_mode
+        self._autocast_ctx = nullcontext()
 
     def predict(self, original_image):
         """
@@ -102,7 +104,7 @@ class VisualizationDemo(object):
 
         inputs = {"image": image, "height": height, "width": width}
         logger.info("forwarding")
-        with autocast():
+        with self._autocast_ctx:
             predictions = self.model([inputs])[0]
         logger.info("done")
         return predictions
@@ -137,29 +139,36 @@ class VisualizationDemo(object):
 
 
 models = {}
-for model_name, cfg_name in zip(
-    ["ODISE(Label)", "ODISE(Caption)"],
-    ["Panoptic/odise_label_coco_50e.py", "Panoptic/odise_caption_coco_50e.py"],
-):
+_DEMO_MODELS = {}
+_DEMO_MODEL_CONFIGS = [
+    ("ODISE(Label)", "Panoptic/odise_label_coco_50e.py"),
+    ("ODISE(Caption)", "Panoptic/odise_caption_coco_50e.py"),
+]
 
-    cfg = model_zoo.get_config(cfg_name, trained=True)
 
-    cfg.model.overlap_threshold = 0
-    cfg.model.clip_head.alpha = 0.35
-    cfg.model.clip_head.beta = 0.65
-    cfg.train.device = "cuda" if torch.cuda.is_available() else "cpu"
-    seed_all_rng(42)
+def _load_demo_models():
+    if _DEMO_MODELS:
+        return _DEMO_MODELS
 
-    dataset_cfg = cfg.dataloader.test
-    wrapper_cfg = cfg.dataloader.wrapper
+    for model_name, cfg_name in _DEMO_MODEL_CONFIGS:
+        cfg = model_zoo.get_config(cfg_name, trained=True)
 
-    aug = instantiate(dataset_cfg.mapper).augmentations
+        cfg.model.overlap_threshold = 0
+        cfg.model.clip_head.alpha = 0.35
+        cfg.model.clip_head.beta = 0.65
+        cfg.train.device = "cpu"
+        seed_all_rng(42)
 
-    model = instantiate_odise(cfg.model)
-    model.to(torch.float16)
-    model.to(cfg.train.device)
-    ODISECheckpointer(model).load(cfg.train.init_checkpoint)
-    models[model_name] = model
+        dataset_cfg = cfg.dataloader.test
+        aug = instantiate(dataset_cfg.mapper).augmentations
+
+        model = instantiate_odise(cfg.model)
+        model.to(torch.float32 if cfg.train.device == "cpu" else torch.float16)
+        model.to(cfg.train.device)
+        ODISECheckpointer(model).load(cfg.train.init_checkpoint)
+        _DEMO_MODELS[model_name] = {"model": model, "aug": aug}
+
+    return _DEMO_MODELS
 
 
 title = "ODISE"
@@ -249,10 +258,13 @@ def inference(image_path, vocab, label_list, model_name):
     demo_classes, demo_metadata = build_demo_classes_and_metadata(vocab, label_list)
     if model_name is None:
         model_name = "ODISE(Label)"
+    model_bundle = _load_demo_models().get(model_name, _load_demo_models()["ODISE(Label)"])
+    model = model_bundle["model"]
+    aug = model_bundle["aug"]
     with ExitStack() as stack:
         logger.info(f"loading model {model_name}")
         inference_model = OpenPanopticInference(
-            model=models[model_name],
+            model=model,
             labels=demo_classes,
             metadata=demo_metadata,
             semantic_on=False,
@@ -268,65 +280,87 @@ def inference(image_path, vocab, label_list, model_name):
         return Image.fromarray(visualized_output.get_image())
 
 
-with gr.Blocks(title=title) as demo:
-    gr.Markdown("<h1 style='text-align: center; margin-bottom: 1rem'>" + title + "</h1>")
-    gr.Markdown(description)
-    input_components = []
-    output_components = []
+def build_demo():
+    if gr is None:
+        raise ImportError(
+            "gradio is required to build the app. Install with `pip install 'odise[app]'`."
+        )
+    with gr.Blocks(title=title) as demo:
+        gr.Markdown("<h1 style='text-align: center; margin-bottom: 1rem'>" + title + "</h1>")
+        gr.Markdown(description)
+        input_components = []
+        output_components = []
 
-    with gr.Row():
-        output_image_gr = gr.outputs.Image(label="Panoptic Segmentation", type="pil")
-        output_components.append(output_image_gr)
+        with gr.Row():
+            output_image_gr = gr.Image(label="Panoptic Segmentation", type="pil")
+            output_components.append(output_image_gr)
 
-    with gr.Row().style(equal_height=True, mobile_collapse=True):
-        with gr.Column(scale=3, variant="panel") as input_component_column:
-            input_image_gr = gr.inputs.Image(type="filepath")
-            model_name_gr = gr.inputs.Dropdown(
-                label="Model", choices=["ODISE(Label)", "ODISE(Caption)"], default="ODISE(Label)"
-            )
-            extra_vocab_gr = gr.inputs.Textbox(default="", label="Extra Vocabulary")
-            category_list_gr = gr.inputs.CheckboxGroup(
-                choices=["COCO (133 categories)", "ADE (150 categories)", "LVIS (1203 categories)"],
-                default=["COCO (133 categories)", "ADE (150 categories)", "LVIS (1203 categories)"],
-                label="Category to use",
-            )
-            input_components.extend([input_image_gr, extra_vocab_gr, category_list_gr])
+        with gr.Row(equal_height=True):
+            with gr.Column(scale=3, variant="panel") as input_component_column:
+                input_image_gr = gr.Image(type="filepath")
+                model_name_gr = gr.Dropdown(
+                    label="Model",
+                    choices=["ODISE(Label)", "ODISE(Caption)"],
+                    value="ODISE(Label)",
+                )
+                extra_vocab_gr = gr.Textbox(value="", label="Extra Vocabulary")
+                category_list_gr = gr.CheckboxGroup(
+                    choices=[
+                        "COCO (133 categories)",
+                        "ADE (150 categories)",
+                        "LVIS (1203 categories)",
+                    ],
+                    value=[
+                        "COCO (133 categories)",
+                        "ADE (150 categories)",
+                        "LVIS (1203 categories)",
+                    ],
+                    label="Category to use",
+                )
+                input_components.extend([input_image_gr, extra_vocab_gr, category_list_gr])
 
-        with gr.Column(scale=2):
-            examples_handler = gr.Examples(
-                examples=examples,
-                inputs=[c for c in input_components if not isinstance(c, gr.State)],
-                outputs=[c for c in output_components if not isinstance(c, gr.State)],
-                fn=inference,
-                cache_examples=torch.cuda.is_available(),
-                examples_per_page=5,
-            )
-            with gr.Row():
-                clear_btn = gr.Button("Clear")
-                submit_btn = gr.Button("Submit", variant="primary")
+            with gr.Column(scale=2):
+                examples_handler = gr.Examples(
+                    examples=examples,
+                    inputs=[c for c in input_components if not isinstance(c, gr.State)],
+                    outputs=[c for c in output_components if not isinstance(c, gr.State)],
+                    fn=inference,
+                    cache_examples=False,
+                    examples_per_page=5,
+                )
+                with gr.Row():
+                    clear_btn = gr.Button("Clear")
+                    submit_btn = gr.Button("Submit", variant="primary")
 
-    gr.Markdown(article)
+        gr.Markdown(article)
 
-    submit_btn.click(
-        inference,
-        input_components + [model_name_gr],
-        output_components,
-        api_name="predict",
-        scroll_to_output=True,
-    )
+        submit_btn.click(
+            inference,
+            input_components + [model_name_gr],
+            output_components,
+            api_name="predict",
+            scroll_to_output=True,
+        )
 
-    clear_btn.click(
-        None,
-        [],
-        (input_components + output_components + [input_component_column]),
-        _js=f"""() => {json.dumps(
-                    [component.cleared_value if hasattr(component, "cleared_value") else None
-                     for component in input_components + output_components] + (
-                        [gr.Column.update(visible=True)]
-                    )
-                    + ([gr.Column.update(visible=False)])
-                )}
-                """,
-    )
+        def clear_inputs():
+            return [None, "", [
+                "COCO (133 categories)",
+                "ADE (150 categories)",
+                "LVIS (1203 categories)",
+            ], None]
 
-demo.launch()
+        clear_btn.click(
+            clear_inputs,
+            [],
+            input_components + output_components,
+        )
+    return demo
+
+
+def main():
+    demo = build_demo()
+    demo.launch()
+
+
+if __name__ == "__main__":
+    main()

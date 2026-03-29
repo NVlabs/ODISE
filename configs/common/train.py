@@ -34,7 +34,7 @@ train = dict(
     checkpointer=dict(period=5000, max_to_keep=2),  # options for PeriodicCheckpointer
     eval_period="${train.checkpointer.period}",
     log_period=50,
-    device="cuda",
+    device="cpu",
     seed=42,
     # ...
     wandb=dict(

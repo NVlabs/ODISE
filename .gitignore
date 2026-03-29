@@ -66,3 +66,11 @@ gradio_queue.db
 *.ckpt
 
 *.o
+
+# optional third_party checkouts (source-only forks can be re-cloned locally)
+third_party/latent-diffusion/.git
+third_party/taming-transformers/.git
+
+# Third-party cloned repos (managed by bootstrap scripts)
+third_party/latent-diffusion/
+third_party/taming-transformers/

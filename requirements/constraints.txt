@@ -1,0 +1,5 @@
+# Compatibility pins shared by ODISE + extensions.
+# Keep NumPy on the 1.x ABI line for this stack and pin timm per Python version.
+numpy<2.0
+timm==0.6.11; python_version < '3.11'
+timm==0.6.13; python_version >= '3.11'

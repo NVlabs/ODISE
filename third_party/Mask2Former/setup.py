@@ -46,9 +46,6 @@ def get_extensions():
         define_macros += [("WITH_CUDA", None)]
         extra_compile_args["nvcc"] = [
             "-DCUDA_HAS_FP16=1",
-            "-D__CUDA_NO_HALF_OPERATORS__",
-            "-D__CUDA_NO_HALF_CONVERSIONS__",
-            "-D__CUDA_NO_HALF2_OPERATORS__",
         ]
     else:
         if CUDA_HOME is None:
@@ -83,13 +80,13 @@ setup(
     packages=find_packages(exclude=("configs", "tests*")),
     python_requires=">=3.6",
     install_requires=[
-        "detectron2 @ https://github.com/facebookresearch/detectron2/archive/v0.6.zip",
+        "detectron2",
         "scipy>=1.7.3",
         "boto3>=1.21.25",
-        "hydra-core==1.1.1",
-        # there is BC breaking in omegaconf 2.2.1
-        # see: https://github.com/omry/omegaconf/issues/939
-        "omegaconf==2.1.1",
+        # Hydra <1.3 breaks on Python 3.11 due immutable dataclass defaults.
+        "hydra-core>=1.3,<3",
+        # there is BC breaking in omegaconf 2.2.1; keep on a later stable stream.
+        "omegaconf>=2.3,<3",
         "panopticapi @ https://github.com/cocodataset/panopticapi/archive/master.zip",
         "lvis @ https://github.com/lvis-dataset/lvis-api/archive/master.zip",
     ],

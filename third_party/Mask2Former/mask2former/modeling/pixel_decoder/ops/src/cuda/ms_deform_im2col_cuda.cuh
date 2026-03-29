@@ -20,8 +20,46 @@
 
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
+#include <cuda_fp16.h>
+#include <cuda_bf16.h>
 
-#include <THC/THCAtomics.cuh>
+// Generic wrapper: forward to atomicAdd for float/double
+template <typename scalar_t>
+__device__ __forceinline__ void gpuAtomicAdd(scalar_t* address, scalar_t val) {
+    atomicAdd(address, val);
+}
+
+// Specialization for c10::Half — cast to float for atomicAdd
+template <>
+__device__ __forceinline__ void gpuAtomicAdd<c10::Half>(c10::Half* address, c10::Half val) {
+    atomicAdd(reinterpret_cast<__half*>(address), static_cast<__half>(val));
+}
+
+// Specialization for c10::BFloat16 — use float CAS loop
+template <>
+__device__ __forceinline__ void gpuAtomicAdd<c10::BFloat16>(c10::BFloat16* address, c10::BFloat16 val) {
+#if __CUDA_ARCH__ >= 800
+    atomicAdd(reinterpret_cast<__nv_bfloat16*>(address), static_cast<__nv_bfloat16>(val));
+#else
+    // Fallback: CAS loop via float
+    unsigned int* address_as_uint = reinterpret_cast<unsigned int*>(
+        reinterpret_cast<char*>(address) - (reinterpret_cast<size_t>(address) & 2));
+    unsigned int old = *address_as_uint;
+    unsigned int assumed;
+    bool is_upper = (reinterpret_cast<size_t>(address) & 2);
+    do {
+        assumed = old;
+        unsigned short raw = is_upper ? (old >> 16) : (old & 0xFFFF);
+        __nv_bfloat16 bf_val = *reinterpret_cast<__nv_bfloat16*>(&raw);
+        float sum = __bfloat162float(bf_val) + static_cast<float>(val);
+        __nv_bfloat16 new_bf = __float2bfloat16(sum);
+        unsigned short new_raw = *reinterpret_cast<unsigned short*>(&new_bf);
+        unsigned int new_val = is_upper ? ((old & 0xFFFF) | (new_raw << 16))
+                                        : ((old & 0xFFFF0000) | new_raw);
+        old = atomicCAS(address_as_uint, assumed, new_val);
+    } while (old != assumed);
+#endif
+}
 
 #define CUDA_KERNEL_LOOP(i, n)                          \
   for (int i = blockIdx.x * blockDim.x + threadIdx.x;   \
@@ -127,7 +165,7 @@ __device__ void ms_deform_attn_col2im_bilinear(const scalar_t* &bottom_data,
     v1 = bottom_data[ptr1];
     grad_h_weight -= hw * v1;
     grad_w_weight -= hh * v1;
-    atomicAdd(grad_value+ptr1, w1*top_grad_value);
+    gpuAtomicAdd(grad_value+ptr1, w1*top_grad_value);
   }
   scalar_t v2 = 0;
   if (h_low >= 0 && w_high <= width - 1)
@@ -136,7 +174,7 @@ __device__ void ms_deform_attn_col2im_bilinear(const scalar_t* &bottom_data,
     v2 = bottom_data[ptr2];
     grad_h_weight -= lw * v2;
     grad_w_weight += hh * v2;
-    atomicAdd(grad_value+ptr2, w2*top_grad_value);
+    gpuAtomicAdd(grad_value+ptr2, w2*top_grad_value);
   }
   scalar_t v3 = 0;
   if (h_high <= height - 1 && w_low >= 0)
@@ -145,7 +183,7 @@ __device__ void ms_deform_attn_col2im_bilinear(const scalar_t* &bottom_data,
     v3 = bottom_data[ptr3];
     grad_h_weight += hw * v3;
     grad_w_weight -= lh * v3;
-    atomicAdd(grad_value+ptr3, w3*top_grad_value); 
+    gpuAtomicAdd(grad_value+ptr3, w3*top_grad_value); 
   }
   scalar_t v4 = 0;
   if (h_high <= height - 1 && w_high <= width - 1)
@@ -154,7 +192,7 @@ __device__ void ms_deform_attn_col2im_bilinear(const scalar_t* &bottom_data,
     v4 = bottom_data[ptr4];
     grad_h_weight += lw * v4;
     grad_w_weight += lh * v4;
-    atomicAdd(grad_value+ptr4, w4*top_grad_value);
+    gpuAtomicAdd(grad_value+ptr4, w4*top_grad_value);
   }
 
   const scalar_t val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
@@ -202,7 +240,7 @@ __device__ void ms_deform_attn_col2im_bilinear_gm(const scalar_t* &bottom_data,
     v1 = bottom_data[ptr1];
     grad_h_weight -= hw * v1;
     grad_w_weight -= hh * v1;
-    atomicAdd(grad_value+ptr1, w1*top_grad_value);
+    gpuAtomicAdd(grad_value+ptr1, w1*top_grad_value);
   }
   scalar_t v2 = 0;
   if (h_low >= 0 && w_high <= width - 1)
@@ -211,7 +249,7 @@ __device__ void ms_deform_attn_col2im_bilinear_gm(const scalar_t* &bottom_data,
     v2 = bottom_data[ptr2];
     grad_h_weight -= lw * v2;
     grad_w_weight += hh * v2;
-    atomicAdd(grad_value+ptr2, w2*top_grad_value);
+    gpuAtomicAdd(grad_value+ptr2, w2*top_grad_value);
   }
   scalar_t v3 = 0;
   if (h_high <= height - 1 && w_low >= 0)
@@ -220,7 +258,7 @@ __device__ void ms_deform_attn_col2im_bilinear_gm(const scalar_t* &bottom_data,
     v3 = bottom_data[ptr3];
     grad_h_weight += hw * v3;
     grad_w_weight -= lh * v3;
-    atomicAdd(grad_value+ptr3, w3*top_grad_value); 
+    gpuAtomicAdd(grad_value+ptr3, w3*top_grad_value); 
   }
   scalar_t v4 = 0;
   if (h_high <= height - 1 && w_high <= width - 1)
@@ -229,13 +267,13 @@ __device__ void ms_deform_attn_col2im_bilinear_gm(const scalar_t* &bottom_data,
     v4 = bottom_data[ptr4];
     grad_h_weight += lw * v4;
     grad_w_weight += lh * v4;
-    atomicAdd(grad_value+ptr4, w4*top_grad_value);
+    gpuAtomicAdd(grad_value+ptr4, w4*top_grad_value);
   }
 
   const scalar_t val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
-  atomicAdd(grad_attn_weight, top_grad * val); 
-  atomicAdd(grad_sampling_loc, width * grad_w_weight * top_grad_value);
-  atomicAdd(grad_sampling_loc + 1, height * grad_h_weight * top_grad_value);
+  gpuAtomicAdd(grad_attn_weight, top_grad * val);
+  gpuAtomicAdd(grad_sampling_loc, width * grad_w_weight * top_grad_value);
+  gpuAtomicAdd(grad_sampling_loc + 1, height * grad_h_weight * top_grad_value);
 }
 
 
@@ -831,9 +869,9 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v2_multi_blocks(const
 
         if (tid == 0)
         {
-          atomicAdd(grad_sampling_loc, cache_grad_sampling_loc[0]);
-          atomicAdd(grad_sampling_loc + 1, cache_grad_sampling_loc[1]);
-          atomicAdd(grad_attn_weight, cache_grad_attn_weight[0]);
+          gpuAtomicAdd(grad_sampling_loc, cache_grad_sampling_loc[0]);
+          gpuAtomicAdd(grad_sampling_loc + 1, cache_grad_sampling_loc[1]);
+          gpuAtomicAdd(grad_attn_weight, cache_grad_attn_weight[0]);
         }
         __syncthreads();
 

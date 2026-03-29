@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 import tqdm
 
-from torch.cuda.amp import autocast
+from torch.amp import autocast
 
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
@@ -131,7 +131,7 @@ if __name__ == "__main__":
             vid_frames.append(img)
 
         start_time = time.time()
-        with autocast():
+        with autocast('cuda'):
             predictions, visualized_output = demo.run_on_video(vid_frames)
         logger.info(
             "detected {} instances per frame in {:.2f}s".format(
@@ -168,7 +168,7 @@ if __name__ == "__main__":
                 break
 
         start_time = time.time()
-        with autocast():
+        with autocast('cuda'):
             predictions, visualized_output = demo.run_on_video(vid_frames)
         logger.info(
             "detected {} instances per frame in {:.2f}s".format(

@@ -12,14 +12,25 @@
 
 import glob
 import os
+import warnings
 import shutil
 from os import path
 from setuptools import find_packages, setup
 from typing import List
-import torch
 
-torch_ver = [int(x) for x in torch.__version__.split(".")[:2]]
-assert torch_ver >= [1, 8], "Requires PyTorch >= 1.8"
+try:
+    import torch
+
+    torch_ver = [int(x) for x in torch.__version__.split(".")[:2]]
+    assert torch_ver >= [2, 0], "Requires PyTorch >= 2.0"
+except ImportError:
+    # keep installation possible in isolated environments where torch is installed later.
+    pass
+
+
+MASK2FORMER_PATH = path.abspath(
+    path.join(path.dirname(__file__), "third_party", "Mask2Former")
+)
 
 
 def get_version():
@@ -62,6 +73,30 @@ def get_model_zoo_configs() -> List[str]:
     return config_paths
 
 
+install_requires = [
+    "numpy<2.0",
+    "timm==0.6.11; python_version < '3.11'",  # freeze timm version for stability
+    "timm==0.6.13; python_version >= '3.11'",  # adjusted for Python 3.11 dataclass compatibility
+    "opencv-python==4.6.0.66",
+    "diffdist==0.1",
+    "nltk>=3.6.2",
+    "einops>=0.3.0",
+    "wandb>=0.12.11",
+    # "transformers==4.20.1",  # freeze transformers version for stabliity
+    # there is BC breaking in omegaconf 2.2.1
+    # see: https://github.com/omry/omegaconf/issues/939
+    "omegaconf>=2.3,<3",
+    "open-clip-torch==2.0.2",
+]
+
+if path.isdir(MASK2FORMER_PATH):
+    install_requires.append(f"mask2former @ file://localhost/{MASK2FORMER_PATH}")
+else:
+    warnings.warn(
+        "third_party/Mask2Former directory not found; skipping local mask2former dependency. "
+        "Set up this submodule before packaging if needed."
+    )
+
 setup(
     name="odise",
     version=get_version(),
@@ -70,23 +105,14 @@ setup(
     description="Open-vocabulary DIffusion-based Panoptic Segmentation",
     packages=find_packages(exclude=("configs", "tests*")),
     package_data={"odise.model_zoo": get_model_zoo_configs()},
-    python_requires=">=3.8",
-    install_requires=[
-        "timm==0.6.11",  # freeze timm version for stabliity
-        "opencv-python==4.6.0.66",
-        "diffdist==0.1",
-        "nltk>=3.6.2",
-        "einops>=0.3.0",
-        "wandb>=0.12.11",
-        # "transformers==4.20.1",  # freeze transformers version for stabliity
-        # there is BC breaking in omegaconf 2.2.1
-        # see: https://github.com/omry/omegaconf/issues/939
-        "omegaconf==2.1.1",
-        "open-clip-torch==2.0.2",
-        f"mask2former @ file://localhost/{os.getcwd()}/third_party/Mask2Former/",
-        "stable-diffusion-sdkit==2.1.3",
-    ],
+    python_requires=">=3.10",
+    install_requires=install_requires,
     extras_require={
+        "sdkit": ["stable-diffusion-sdkit==2.1.3"],
+        "app": ["gradio>=4.44"],
+        "s3": [
+            "boto3",
+        ],
         # dev dependencies. Install them by `pip install 'odise[dev]'`
         "dev": [
             "flake8==3.8.1",

@@ -17,7 +17,7 @@
 import logging
 import os
 from typing import Optional
-import pkg_resources
+from importlib import resources as importlib_resources
 import torch
 from detectron2.config import LazyConfig
 
@@ -86,9 +86,7 @@ def get_config_file(config_path):
     Returns:
         str: the real path to the config file.
     """
-    cfg_file = pkg_resources.resource_filename(
-        "odise.model_zoo", os.path.join("configs", config_path)
-    )
+    cfg_file = str(importlib_resources.files("odise.model_zoo").joinpath("configs", config_path))
     if not os.path.exists(cfg_file):
         raise RuntimeError("{} not available in Model Zoo!".format(config_path))
     return cfg_file

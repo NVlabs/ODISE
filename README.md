@@ -52,32 +52,67 @@ If you find our work useful in your research, please cite:
 
 ## Environment Setup
 
-Install dependencies by running:
+Install with PyTorch 2.x using `uv` (CPU-first path by default):
 
 ```bash
-conda create -n odise python=3.9
-conda activate odise
-conda install pytorch=1.13.1 torchvision=0.14.1 pytorch-cuda=11.6 -c pytorch -c nvidia
-conda install -c "nvidia/label/cuda-11.6.1" libcusolver-dev
-git clone git@github.com:NVlabs/ODISE.git 
-cd ODISE
-pip install -e .
+uv venv .venv --python 3.10
+source .venv/bin/activate
+uv pip install --upgrade pip setuptools wheel
+uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+uv pip install -e .
+
+# Optional S3 path support (used only when training/inference references s3:// URLs):
+uv pip install -e ".[s3]"
+
+# LDM/Stable Diffusion integrations require optional third-party checkouts:
+# initialize them with submodules or bootstrap script:
+#
+#   git submodule update --init --recursive
+#
+# If you prefer a one-command local bootstrap, or if cloning was done without submodules:
+#
+#   bash tools/bootstrap_third_party.sh
+# For a clean reset of existing accidental nested git checkouts, pass `--force`:
+#   bash tools/bootstrap_third_party.sh --force
+
+# If you are running on CUDA machines and want GPU support, install CUDA wheels instead:
+# uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+
+Optional: rebuild Mask2Former CUDA kernels after any Torch/CUDA update:
+
+```bash
+cd third_party/Mask2Former
+python setup.py build install
+```
+
+For offline feature extraction (CPU/default path):
+
+```bash
+python tools/extract_features.py \
+  --config-file configs/Panoptic/odise_label_coco_50e.py \
+  --force-cpu \
+  --init-from /path/to/checkpoint.pth \
+  --output /path/to/feature_out \
+  --num-gpus 1 \
+  --dataloader dataloader.test \
+  --feature-layers s2,s3,s4,s5
 ```
 
 (Optional) install [xformers](https://github.com/facebookresearch/xformers) for efficient transformer implementation:
 One could either install the pre-built version
 
 ```
-pip install xformers==0.0.16
+uv pip install xformers==0.0.16
 ```
 
 or build from latest source 
 
 ```bash
 # (Optional) Makes the build much faster
-pip install ninja
+uv pip install ninja
 # Set TORCH_CUDA_ARCH_LIST if running and building on different GPU types
-pip install -v -U git+https://github.com/facebookresearch/xformers.git@main#egg=xformers
+uv pip install -v -U git+https://github.com/facebookresearch/xformers.git@main#egg=xformers
 # (this can take dozens of minutes)
 ```
 

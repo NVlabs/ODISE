@@ -19,6 +19,7 @@ from collections import defaultdict
 from typing import List
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.checkpoint.c2_model_loading import align_and_update_state_dicts
+import torch
 from fvcore.common.checkpoint import Checkpointer
 
 from odise.utils.file_io import PathManager
@@ -138,3 +139,10 @@ class LdmCheckpointer(Checkpointer):
         # rename the keys in checkpoint
         checkpoint["model"] = checkpoint.pop("state_dict")
         return super()._load_model(checkpoint)
+
+    def _load_file(self, file):
+        # PyTorch 2.6 changes default torch.load(..., weights_only=True), which breaks
+        # legacy ODISE LDV checkpoints containing optimizer/scheduler objects.
+        # These checkpoints are trusted and loaded from project-provided sources, so keep legacy behavior.
+        with self.path_manager.open(file, "rb") as f:
+            return torch.load(f, map_location=torch.device("cpu"), weights_only=False)

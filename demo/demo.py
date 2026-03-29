@@ -49,11 +49,16 @@ from odise.config import instantiate_odise
 from odise.data import get_openseg_labels
 from odise.engine.defaults import get_model_from_module
 
-nltk.download("popular", quiet=True)
-nltk.download("universal_tagset", quiet=True)
-
 # constants
 WINDOW_NAME = "ODISE demo"
+
+
+def _ensure_nltk_resources():
+    try:
+        nltk.download("popular", quiet=True)
+        nltk.download("universal_tagset", quiet=True)
+    except Exception as e:
+        warnings.warn(f"Skipping NLTK corpus downloads: {e}")
 
 COCO_THING_CLASSES = [
     label
@@ -328,6 +333,7 @@ if __name__ == "__main__":
             extra_classes.append([word.strip() for word in words.split(",")])
 
     if args.caption:
+        _ensure_nltk_resources()
         caption_words = []
         caption_words.extend(get_nouns(args.caption, True))
         caption_words.extend(get_nouns(args.caption, False))
@@ -351,7 +357,7 @@ if __name__ == "__main__":
         demo_thing_classes += COCO_THING_CLASSES
         demo_stuff_classes += COCO_STUFF_CLASSES
         demo_thing_colors += COCO_THING_COLORS
-        demo_stuff_colors = COCO_STUFF_COLORS
+        demo_stuff_colors += COCO_STUFF_COLORS
     if "ADE" in args.label:
         demo_thing_classes += ADE_THING_CLASSES
         demo_stuff_classes += ADE_STUFF_CLASSES

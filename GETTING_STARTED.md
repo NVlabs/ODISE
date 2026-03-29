@@ -6,6 +6,22 @@ For further reading, please refer to [Getting Started with Detectron2](https://g
 
 **Important Note**: ODISE's `demo/demo.py` and `tools/train_net.py` scripts link to the original pre-trained models for [Stable Diffusion v1.3](https://huggingface.co/CompVis/stable-diffusion-v-1-3-original/resolve/main/sd-v1-3.ckpt) and [CLIP](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt). When you run them for the very first time, these scripts will automatically download the pre-trained models for Stable Diffuson and CLIP, from their original sources, to your local directories `$HOME/.torch/` and `$HOME/.cache/clip`, respectively. Their use is subject to the original license terms defined at [https://github.com/CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion) and [https://github.com/openai/CLIP](https://github.com/openai/CLIP), respectively.
 
+If you use `stable-diffusion` backbones (latent-diffusion/taming-transformers), initialize optional third_party checkouts first:
+
+```bash
+bash tools/bootstrap_third_party.sh
+```
+
+If your clone did not include submodules, or if you need a clean refresh:
+
+```bash
+bash tools/bootstrap_third_party.sh --force
+```
+or
+```bash
+git submodule update --init --recursive
+```
+
 
 ### Inference Demo with Pre-trained ODISE Models
 
@@ -49,39 +65,40 @@ python demo/demo.py --input demo/examples/purse.jpeg --output demo/purse_pred.jp
 We provide a script `tools/train_net.py` that trains all configurations of ODISE.
 
 To train a model with `tools/train_net.py`, first prepare the datasets following the instructions in
-[datasets/README.md](./datasets/README.md) and then run, for single-node (8-GPUs) NVIDIA AMP-based training:
+[datasets/README.md](./datasets/README.md) and then run, for CPU-first single-process training:
 ```bash
-(node0)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --num-gpus 8 --amp 
-```
-For 4-node (32-GPUs) AMP-based training, run: 
-```bash
-(node0)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 0 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --amp
-(node1)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 1 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --amp
-(node2)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 2 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --amp
-(node3)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 3 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --amp
+./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --num-gpus 1 --force-cpu
 ```
 
-Note that our default training configurations are designed for 32 GPUs.
-Since we use the AdamW optimizer, it is not clear as to how to scale the learning rate with batch size.
-However, we provide the ability to automatically scale the learning rate and the batch size for any number of GPUs used for training by passing in the`--ref $REFERENCE_WORLD_SIZE` argument. 
-For example, if you set `$REFERENCE_WORLD_SIZE=32` while training on 8 GPUs, the batch size and learning rate will be set to 8/32 = 0.25 of the original ones.
+AMP is only enabled when CUDA is available. On CPU-only machines, training falls back to full precision.
+
+For multi-GPU training (optional, if you still run distributed CUDA), keep your existing launch pattern and pass `--num-gpus` plus `--amp` as before.
+
+### High-throughput Feature Extraction
+
+`tools/extract_features.py` supports distributed extraction. For CPU-only use:
 
 ```bash
-(node0)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --num-gpus 8 --amp --ref 32
-```
+python tools/extract_features.py \
+  --config-file configs/Panoptic/odise_label_coco_50e.py \
+  --num-gpus 1 \
+  --force-cpu \
+  --num-machines 1 \
+  --init-from /path/to/checkpoint.pth \
+  --output /path/to/feature_out \
+  --dataloader dataloader.test \
+  --feature-layers s2,s3,s4,s5
+``` 
 
-ODISE trains in 6 days on 32 NVIDIA V100 GPUs.
+You can scale this to multi-GPU later by increasing `--num-gpus` and `--num-machines` once your environment is configured for distributed execution.
 
-To evaluate a trained ODISE model's performance, run on single node
+`--dataloader` is a dotted path inside the config; for built-in PANOPTIC configs this is `dataloader.test`.
+Each `.pt` file stores a single image's normalized feature maps and metadata and can be merged later as needed.
+
+To evaluate a trained ODISE model on CPU-only single process:
 ```
-(node0)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --num-gpus 8 --eval-only --init-from /path/to/checkpoint
+./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --num-gpus 1 --force-cpu --eval-only --init-from /path/to/checkpoint
 ```
-or for multi-node inference:
-```bash
-(node0)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 0 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --eval-only --init-from /path/to/checkpoint
-(node1)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 1 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --eval-only --init-from /path/to/checkpoint
-(node2)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 2 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --eval-only --init-from /path/to/checkpoint
-(node3)$ ./tools/train_net.py --config-file configs/Panoptic/odise_label_coco_50e.py --machine-rank 3 --num-machines 4 --dist-url tcp://${MASTER_ADDR}:29500 --num-gpus 8 --eval-only --init-from /path/to/checkpoint
-```
+or use distributed multi-node/multi-GPU launch flags as needed in your own environment.
 
 To use the our provided ODISE [model zoo](README.md#model-zoo), you can pass in the arguments `--config-file configs/Panoptic/odise_label_coco_50e.py --init-from odise://Panoptic/odise_label_coco_50e` or `--config-file configs/Panoptic/odise_label_coco_50e.py --init-from odise://Panoptic/odise_caption_coco_50e` to `./tools/train_net.py`, respectively.

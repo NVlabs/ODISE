@@ -24,8 +24,6 @@ from detectron2.utils.env import seed_all_rng
 from detectron2.utils.file_io import PathManager
 from detectron2.utils.logger import setup_logger
 
-from odise.utils.collect_env import collect_env_info
-
 
 def get_model_from_module(model):
     if hasattr(model, "module"):
@@ -65,16 +63,22 @@ def default_setup(cfg, args):
     logger = setup_logger(log_dir, distributed_rank=rank)
 
     logger.info("Rank of current process: {}. World size: {}".format(rank, comm.get_world_size()))
-    logger.info("Environment info:\n" + collect_env_info())
+    try:
+        from odise.utils.collect_env import collect_env_info
+
+        logger.info("Environment info:\n" + collect_env_info())
+    except Exception as e:
+        logger.warning(f"Skipping environment collection due: {e}")
 
     logger.info("Command line arguments: " + str(args))
     if hasattr(args, "config_file") and args.config_file != "":
-        logger.info(
-            "Contents of args.config_file={}:\n{}".format(
-                args.config_file,
-                _highlight(PathManager.open(args.config_file, "r").read(), args.config_file),
+        with PathManager.open(args.config_file, "r") as f:
+            logger.info(
+                "Contents of args.config_file={}:\n{}".format(
+                    args.config_file,
+                    _highlight(f.read(), args.config_file),
+                )
             )
-        )
 
     if comm.is_main_process() and log_dir:
         # Note: some of our scripts may expect the existence of
