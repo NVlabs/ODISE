@@ -68,8 +68,8 @@ RUN curl https://rclone.org/install.sh | bash
 # Set timezone
 RUN ln -sf /usr/share/zoneinfo/US/Pacific /etc/localtime
 
-# Set CUDA_ROOT
-RUN export CUDA_HOME="/usr/local/cuda"
+# Set CUDA_HOME
+ENV CUDA_HOME="/usr/local/cuda"
 
 # Install pytorch
 #RUN conda install pytorch torchvision cudatoolkit=11.1 -c pytorch -c conda-forge -y
