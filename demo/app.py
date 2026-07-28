@@ -321,10 +321,8 @@ with gr.Blocks(title=title) as demo:
         (input_components + output_components + [input_component_column]),
         _js=f"""() => {json.dumps(
                     [component.cleared_value if hasattr(component, "cleared_value") else None
-                     for component in input_components + output_components] + (
-                        [gr.Column.update(visible=True)]
-                    )
-                    + ([gr.Column.update(visible=False)])
+                     for component in input_components + output_components]
+                    + [gr.Column.update(visible=True)]
                 )}
                 """,
     )
