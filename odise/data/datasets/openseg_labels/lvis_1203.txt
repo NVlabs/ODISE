@@ -652,7 +652,7 @@
 652:lizard
 653:log
 654:lollipop
-655:speaker (stero equipment)
+655:speaker (stereo equipment)
 656:loveseat
 657:machine gun
 658:magazine
