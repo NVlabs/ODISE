@@ -31,16 +31,16 @@ train.checkpointer.period = 4500
 lr_multiplier = L(WarmupParamScheduler)(
     scheduler=L(MultiStepParamScheduler)(
         values=[1.0, 0.1, 0.01],
-        # assume 100e with batch-size 64 as original LSJ
-        # Equivalent to 100 epochs.
-        # 100 ep = 184375 iters * 64 images/iter / 118000 images/ep
-        milestones=[163889, 177546],
-        num_updates=184375,
+        # 50e schedule scaled from the 100e LSJ setting
+        milestones=[81944, 88773],
+        num_updates=92188,
     ),
     # for warmup length we adopted COCO LSJ setting
-    warmup_length=500 / 184375,
+    warmup_length=500 / 92188,
     warmup_factor=0.067,
 )
+
+train.lr_multiplier = lr_multiplier
 
 optimizer.lr = 1e-4
 optimizer.weight_decay = 0.05
