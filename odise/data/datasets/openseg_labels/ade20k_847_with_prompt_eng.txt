@@ -71,7 +71,7 @@
 70:kitchen island
 71:boat
 72:waterfall,falls
-73:stove,kitchen stove,kitchen range,kitchen range,cooking stove
+73:stove,kitchen stove,kitchen range,cooking stove
 74:flower,flowers
 75:bookcase
 76:controls
