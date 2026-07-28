@@ -37,7 +37,7 @@ def generate_labels(img_info, detail_api, out_dir):
         values = np.unique(mask)
         for i in range(len(values)):
             assert values[i] in _mapping
-        index = np.digitize(mask.ravel(), _mapping, right=True)
+        index = np.digitize(mask.ravel(), _mapping)
         return _key[index].reshape(mask.shape)
 
     sem_seg = _class_to_index(detail_api.getMask(img_info), _mapping=_mapping, _key=_key)
