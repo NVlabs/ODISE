@@ -60,7 +60,7 @@ PASCAL_CTX_59_CATEGORIES = [
     {"color": [235, 12, 255], "id": 44, "isthing": 0, "name": "sidewalk"},
     {"color": [160, 150, 20], "id": 45, "isthing": 0, "name": "sign"},
     {"color": [0, 163, 255], "id": 46, "isthing": 0, "name": "sky"},
-    {"color": [140, 140, 140], "id": 47, "isthing": 0, "name": "snow"},
+    {"color": [192, 192, 192], "id": 47, "isthing": 0, "name": "snow"},
     {"color": [250, 10, 15], "id": 48, "isthing": 0, "name": "sofa"},
     {"color": [20, 255, 0], "id": 49, "isthing": 0, "name": "diningtable"},
     {"color": [31, 255, 0], "id": 50, "isthing": 0, "name": "track"},
