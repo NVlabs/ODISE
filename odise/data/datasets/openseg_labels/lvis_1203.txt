@@ -198,7 +198,7 @@
 198:walking cane
 199:canister
 200:canoe
-201:cantaloup
+201:cantaloupe
 202:canteen
 203:cap (headwear)
 204:bottle cap
