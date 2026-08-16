@@ -9,7 +9,7 @@
 8:bed,beds
 9:sidewalk,pavement
 10:earth,ground
-11:cabinet,cabinets,wall mounted cabine
+11:cabinet,cabinets,wall mounted cabinet
 12:person,child,girl,boy,woman,man,people,children,girls,boys,women,men
 13:grass,grass field
 14:windowpane,window,windows
