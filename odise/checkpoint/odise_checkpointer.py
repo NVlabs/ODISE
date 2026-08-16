@@ -107,11 +107,11 @@ class ODISECheckpointer(DetectionCheckpointer):
                 _longest_common_prefix(grouped_names)
                 for grouped_names in group_by_prefix(removed_keys).values()
             ]
-            self.logger.warn(
+            self.logger.warning(
                 "Keys with prefix are removed from state_dict:\n" + ",".join(prefix_list)
             )
 
-            self.logger.warn(
+            self.logger.warning(
                 f"Removed {len(removed_keys)} ignored_state_dict keys from missing_keys"
             )
 
