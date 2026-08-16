@@ -141,6 +141,7 @@ def build_d2_test_dataloader(
             "When testing, batch size is set to 1. "
             "This is the only mode that is supported for d2."
         )
+        batch_size = 1
 
     return build_detection_test_loader(
         dataset=dataset,
