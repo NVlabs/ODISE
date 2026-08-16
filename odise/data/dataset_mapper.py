@@ -86,7 +86,7 @@ class COCOPanopticDatasetMapper:
             sem_seg_gt = utils.read_image(
                 dataset_dict.pop("sem_seg_file_name"), format=self.seg_format
             )
-            if self.seg_format == "L":
+            if self.seg_format == "L" and sem_seg_gt.ndim == 3:
                 sem_seg_gt = sem_seg_gt.squeeze(2)
         else:
             sem_seg_gt = None
