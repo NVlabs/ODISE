@@ -36,7 +36,7 @@
 36:suitcase
 37:bagel
 38:bagpipe
-39:baguet
+39:baguette
 40:bait
 41:ball
 42:ballet skirt
