@@ -695,7 +695,7 @@
 695:mitten
 696:mixer (kitchen tool)
 697:money
-698:monitor (computer equipment) computer monitor
+698:monitor (computer equipment), computer monitor
 699:monkey
 700:motor
 701:motor scooter
