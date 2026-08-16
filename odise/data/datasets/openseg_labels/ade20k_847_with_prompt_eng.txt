@@ -103,7 +103,7 @@
 102:hovel,hut,hutch,shack,shanty
 103:apparel,wearing apparel,dress,clothes
 104:minibike,motorbike
-105:animal,animate being,dog,cat,horse,cow,sheep,zebra,girraffe,bird
+105:animal,animate being,dog,cat,horse,cow,sheep,zebra,giraffe,bird
 106:chandelier,pendant,pendent
 107:step,stair
 108:booth,cubicle,stall,kiosk
