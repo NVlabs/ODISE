@@ -1,5 +1,5 @@
 0:invalid_class_id
-1:person,child,girl,boy,woman,man,people,childeren,girls,boys,women,men,lady,guy,ladies,guys,clothes
+1:person,child,girl,boy,woman,man,people,children,girls,boys,women,men,lady,guy,ladies,guys,clothes
 2:bicycle,bicycles,bike,bikes
 3:car,cars
 4:motorcycle,motorcycles
